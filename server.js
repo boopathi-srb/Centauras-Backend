@@ -1,7 +1,7 @@
 require("./config/db");
 
 const app = require("express")();
-const port = 6000;
+const port =process.env.PORT || 6000 ;
 const connectDB=require('./config/db')
 //for accepting post from data
 connectDB()
