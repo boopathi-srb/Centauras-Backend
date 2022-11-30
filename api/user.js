@@ -2,19 +2,24 @@ const express = require("express");
 const User = require("./../models/User");
 const router = express.Router();
 
-
 //password handler
 const bcrypt = require("bcrypt");
 
 router.post("/signup", (req, res) => {
-  let { name, email, password,year,department } = req.body;
+  let { name, email, password, year, department } = req.body;
   name = name.trim();
   email = email.trim();
   password = password.trim();
-  year=year;
-  department=department.trim()
+  year = year;
+  department = department.trim();
 
-  if (name == "" || email == "" || password == "" || year == ""|| department=="") {
+  if (
+    name == "" ||
+    email == "" ||
+    password == "" ||
+    year == "" ||
+    department == ""
+  ) {
     res.json({
       status: "FAILED",
       message: "Empty input fields",
@@ -24,7 +29,11 @@ router.post("/signup", (req, res) => {
       status: "FAILED",
       message: "Invalid name entered",
     });
-  } else if (/^[a-zA-Z0-9.! #$%&'*+/=? ^_`{|}~-]+@[a-zA-Z0-9-]+(?:\. [a-zA-Z0-9-]+)*$/.test(email)) {
+  } else if (
+    /^[a-zA-Z0-9.! #$%&'*+/=? ^_`{|}~-]+@[a-zA-Z0-9-]+(?:\. [a-zA-Z0-9-]+)*$/.test(
+      email
+    )
+  ) {
     res.json({
       status: "FAILED",
       message: "Invalid Email entered",
@@ -50,11 +59,12 @@ router.post("/signup", (req, res) => {
           bcrypt
             .hash(password, saltRounds)
             .then((hashedPassword) => {
-              const newUser = new user({
+              const newUser = new User({
                 name,
                 email,
                 password: hashedPassword,
-                dateOfBirth,
+                year,
+                department,
               });
               newUser
                 .save()
@@ -75,9 +85,9 @@ router.post("/signup", (req, res) => {
             .catch((err) => {
               res.json({
                 status: "FAILED",
-                message: err
+                message: err.message,
               });
-            })
+            });
         }
       })
       .catch((err) => {
@@ -91,57 +101,58 @@ router.post("/signup", (req, res) => {
 });
 
 router.post("/signin", (req, res) => {
-   let {email, password } = req.body;
-   email = email.trim();
-   password = password.trim();
-   if(email==""||password==""){
+  let { email, password } = req.body;
+  email = email.trim();
+  password = password.trim();
+  if (email == "" || password == "") {
     res.json({
       status: "FAILED",
       message: "Empty credentials given",
     });
-   }
-   else{
-     //checking for users
-      User.find({email}).then(data=>{
-       if(data){
-         //user exists
-         const hashedPassword=data[0].password;
-          bcrypt.compare(password,hashedPassword).then(result=>{
-            if (result) {
-               //password matches
-              res.json({
-                status: "SUCCESS",
-                message: "Sign in successful",
-                data: data,
-               });
-            } 
-            else {
-              res.json({
-                status:"FAILED",
-                 message:"Invalid Password"
-              });
-            }
-          }).catch(err=>{
+  } else {
+    //checking for users
+    User.find({ email })
+      .then((data) => {
+        if (data) {
+          //user exists
+          const hashedPassword = data[0].password;
+          bcrypt
+            .compare(password, hashedPassword)
+            .then((result) => {
+              if (result) {
+                //password matches
                 res.json({
-                 status:"FAILED",
-                  message:"An error occurred while comparing password"
-                })
-              })
-         }
-         else{
+                  status: "SUCCESS",
+                  message: "Sign in successful",
+                  data: data,
+                });
+              } else {
+                res.json({
+                  status: "FAILED",
+                  message: "Invalid Password",
+                });
+              }
+            })
+            .catch((err) => {
+              res.json({
+                status: "FAILED",
+                message: "An error occurred while comparing password",
+              });
+            });
+        } else {
           res.json({
-            status:"FAILED",
-            message:"Invalid credential"
-          })
-         }
+            status: "FAILED",
+            message: "Invalid credential",
+          });
+        }
       })
-      .catch(err=>{
+      .catch((err) => {
         res.json({
-          status:"FAILED",
-          message:"An error occured while checking for error"
-        })
-      })
-    }
-  }  );
+          status: "FAILED",
+          message: "An error occured while checking for error",
+        });
+      });
+  }
+});
 
 module.exports = router;
